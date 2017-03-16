@@ -1,9 +1,9 @@
-# [기술 블로그](https://jeongjoohong.github.io/blog/)
+# [기술 블로그](https://jeongjoohong.github.io/project/)
 
-[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://raw.githubusercontent.com/jeongjoohong/blog/master/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey.svg)](https://raw.githubusercontent.com/jeongjoohong/project/master/LICENSE)
 
 Jekyll을 이용하여 생성된 블로그의 저장소 입니다. 프로젝트의 블로그를 작성하는데 사용하고 있습니다.
-변경기록은 [CHANGELOG.md](https://github.com/jeongjoohong/blog/blob/gh-pages/CHANGELOG.md)를 통해 확인할 수 있습니다.
+변경기록은 [CHANGELOG.md](https://github.com/jeongjoohong/project/blob/gh-pages/CHANGELOG.md)를 통해 확인할 수 있습니다.
 
 ---
 
