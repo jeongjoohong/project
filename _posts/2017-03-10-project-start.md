@@ -1,5 +1,7 @@
 ---
 title: "프로젝트를 시작하였습니다."
+author: 홍정주
+author_profile: true
 categories:
   - 프로젝트
 tags:
