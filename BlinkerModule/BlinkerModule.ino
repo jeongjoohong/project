@@ -11,25 +11,25 @@ const int led2Pin   = 12;
 const boolean isMicrosecond = true;
 const boolean isDebugging = true;
 const boolean isFiltering = false;
-unsigned long updateInterval = 11;  // around 90Hz
 double minCutoff = 1.0;
 double beta = 0.007;
+double inputFrequency = 50;
 
 const long milliseconds = 1000;
 const long microseconds = 1000000;
 unsigned long updatePrevious;
-double readFrequency = milliseconds / updateInterval;
-OneEuroFilter channel1(readFrequency, minCutoff, beta);
-OneEuroFilter channel2(readFrequency, minCutoff, beta);
+OneEuroFilter channel1(inputFrequency, minCutoff, beta);
+OneEuroFilter channel2(inputFrequency, minCutoff, beta);
 
 int level1;
 int level2;
 int number[4];
 unsigned long level1Previous;
 unsigned long level2Previous;
-int led1State;
-int led2State;
-double ledDutyCycle = 0.5;
+boolean led1State;
+boolean led2State;
+const double ledDutyCycle = 0.5;
+unsigned long segmentIndex;
 
 void setup() {
   Serial.begin(9600);
@@ -44,13 +44,14 @@ void setup() {
   level2Previous = 0;
   led1State = LOW;
   led2State = LOW;
+  segmentIndex = 0;
 
   registerBlink(2, 500);
 }
 
 void loop() {
   unsigned long current = isMicrosecond ? micros() : millis();
-  if (current - updatePrevious >= (isMicrosecond ? 1000 : 1) * updateInterval) {
+  if (current - updatePrevious >= (isMicrosecond ? microseconds : milliseconds) / inputFrequency) {
     updatePrevious = current;
     int received1 = analogRead(volum1Pin);
     int received2 = analogRead(volum2Pin);
@@ -121,14 +122,15 @@ void loop() {
       }
     }
   }
-  
-  for (int i = 0; i < sizeof(number) / sizeof(int); i++) {
-    byte segment = (0b1111 ^ (1 << ((sizeof(number) / sizeof(int) - 1) - i)));
-    byte data = (segment << 4) + number[i];
+
+  {
+    int index = segmentIndex % 4;
+    byte segment = (0b1111 ^ (1 << ((sizeof(number) / sizeof(int) - 1) - index)));
+    byte data = (segment << 4) + number[index];
     digitalWrite(latchPin, LOW);
     shiftOut(dataPin, clockPin, MSBFIRST, data);
-    digitalWrite(latchPin, HIGH);
-    delay(2);
+    digitalWrite(latchPin, HIGH);  
+    segmentIndex++;
   }
 }
 
