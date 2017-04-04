@@ -1,4 +1,3 @@
-#include "Arduino.h"
 #include "OneEuroFilter.h"
 
 OneEuroFilter::OneEuroFilter(double freq) {

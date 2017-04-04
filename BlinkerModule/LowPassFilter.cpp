@@ -1,4 +1,3 @@
-#include "Arduino.h"
 #include "LowPassFilter.h"
 
 LowPassFilter::LowPassFilter(double alpha) {
