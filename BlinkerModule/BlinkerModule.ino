@@ -32,7 +32,7 @@ const double ledDutyCycle = 0.5;
 unsigned long segmentIndex;
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(dataPin, OUTPUT);
   pinMode(latchPin, OUTPUT);
   pinMode(clockPin, OUTPUT);
