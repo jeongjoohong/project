@@ -30,7 +30,7 @@ void setup() {
     }
   }
   String portName = Serial.list()[select];
-  port = new Serial(this, portName, 9600);
+  port = new Serial(this, portName, 115200);
   port.bufferUntil('\n');
 
   inputSize = (isFiltered ? 2 : 1) * channel;
