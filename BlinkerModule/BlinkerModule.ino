@@ -1,71 +1,90 @@
 #include "OneEuroFilter.h"
 
-const int volum1Pin = A0;
-const int volum2Pin = A1;
-const int clockPin  = 8;
-const int latchPin  = 9;
-const int dataPin   = 10; // DIGITAL(PWM~)
-const int led1Pin   = 11;
-const int led2Pin   = 12;
+#define VOLUME_L    A0
+#define VOLUME_R    A1
+#define VOLUME_C    A2
 
-const boolean isMicrosecond = true;
-const boolean isDebugging = true;
-const boolean isFiltering = false;
-double minCutoff = 1.0;
-double beta = 0.007;
-double inputFrequency = 50;
+#define REG_DATA    10 // DIGITAL(PWM~)
+#define REG_LATCH   9
+#define REG_CLOCK   8
+#define POT_SELECT  7
+#define POT_CLOCK   6
+#define POT_MOSI    5
+#define LED_L       4
+#define LED_R       3
 
-const long milliseconds = 1000;
-const long microseconds = 1000000;
-unsigned long updatePrevious;
+#define MILLISECONDS  1000L
+#define MICROSECONDS  1000000L
+
+const bool isMicrosecond    = true;
+const bool isDebugging      = true;
+const bool isFiltering      = false;
+const float ledDutyCycle    = 0.5;
+const double minCutoff      = 1.0;
+const double beta           = 0.007;
+const double inputFrequency = 50;
+
+unsigned long long updatePrevious;
 OneEuroFilter channel1(inputFrequency, minCutoff, beta);
 OneEuroFilter channel2(inputFrequency, minCutoff, beta);
 
-int level1;
-int level2;
-int number[4];
-unsigned long level1Previous;
-unsigned long level2Previous;
-boolean led1State;
-boolean led2State;
-const double ledDutyCycle = 0.5;
-unsigned long segmentIndex;
+short level1;
+short level2;
+short level3;
+short number[4];
+unsigned long long level1Previous;
+unsigned long long level2Previous;
+unsigned long long level3Previous;
+bool isLed1On;
+bool isLed2On;
+bool isUpdated;
+unsigned long long segmentIndex;
 
 void setup() {
   Serial.begin(115200);
-  pinMode(dataPin, OUTPUT);
-  pinMode(latchPin, OUTPUT);
-  pinMode(clockPin, OUTPUT);
-  pinMode(led1Pin, OUTPUT);
-  pinMode(led2Pin, OUTPUT);
-  
+  pinMode(REG_DATA, OUTPUT);
+  pinMode(REG_LATCH, OUTPUT);
+  pinMode(REG_CLOCK, OUTPUT);
+  pinMode(POT_MOSI, OUTPUT);
+  pinMode(POT_SELECT, OUTPUT);
+  pinMode(POT_CLOCK, OUTPUT);
+  pinMode(LED_L, OUTPUT);
+  pinMode(LED_R, OUTPUT);
+
   updatePrevious = 0;
   level1Previous = 0;
   level2Previous = 0;
-  led1State = LOW;
-  led2State = LOW;
+  level3Previous = 0;
+  isLed1On = false;
+  isLed2On = false;
+  isUpdated = false;
   segmentIndex = 0;
 
   registerBlink(2, 500);
 }
 
 void loop() {
-  unsigned long current = isMicrosecond ? micros() : millis();
-  if (current - updatePrevious >= (isMicrosecond ? microseconds : milliseconds) / inputFrequency) {
+  unsigned long long current = isMicrosecond ? micros() : millis();
+  if (current - updatePrevious >= (isMicrosecond ? MICROSECONDS : MILLISECONDS) / inputFrequency) {
     updatePrevious = current;
-    int received1 = analogRead(volum1Pin);
-    int received2 = analogRead(volum2Pin);
-    int filtered1;
-    int filtered2;
+    short received1 = analogRead(VOLUME_L);
+    short received2 = analogRead(VOLUME_R);
+    short received3 = analogRead(VOLUME_C);
+    short filtered1;
+    short filtered2;
+
+    isUpdated = true;
 
     if (isFiltering) {
       filtered1 = round(channel1.filter(received1));
       filtered2 = round(channel2.filter(received2));
       level1 = round(filtered1 * (30.0 / 1024.0));
       level2 = round(filtered2 * (30.0 / 1024.0));
+      level3 = round(received3 * (256.0 / 1024.0));
     } else {
       level1 = round(received1 * (30.0 / 1024.0));
       level2 = round(received2 * (30.0 / 1024.0));
+      level3 = round(received3 * (256.0 / 1024.0));
     }
 
     if (isDebugging) {
@@ -89,64 +108,75 @@ void loop() {
 
   current = isMicrosecond ? micros() : millis();
   if (level1 == 0) {
-    led1State = LOW;
-    digitalWrite(led1Pin, led1State);
+    isLed1On = false;
+    digitalWrite(LED_L, LOW);
   } else {
-    if (current - level1Previous >= (isMicrosecond ? microseconds : milliseconds) / level1) {
+    if (current - level1Previous >= (isMicrosecond ? MICROSECONDS : MILLISECONDS) / level1) {
       level1Previous = current;
-      led1State = HIGH;
-      digitalWrite(led1Pin, led1State);
+      isLed1On = true;
+      digitalWrite(LED_L, HIGH);
     } else {
-      if (current - level1Previous >= (isMicrosecond ? microseconds : milliseconds) / level1 * ledDutyCycle) {
-        if (led1State == HIGH) {
-          led1State = LOW;
-          digitalWrite(led1Pin, led1State);
+      if (current - level1Previous >= (isMicrosecond ? MICROSECONDS : MILLISECONDS) / level1 * ledDutyCycle) {
+        if (isLed1On == true) {
+          isLed1On = false;
+          digitalWrite(LED_L, LOW);
         }
       }
     }
   }
   if (level2 == 0) {
-    led2State = LOW;
-    digitalWrite(led2Pin, led2State);
+    isLed2On = false;
+    digitalWrite(LED_R, isLed2On);
   } else {
-    if (current - level2Previous >= (isMicrosecond ? microseconds : milliseconds) / level2) {
+    if (current - level2Previous >= (isMicrosecond ? MICROSECONDS : MILLISECONDS) / level2) {
       level2Previous = current;
-      led2State = HIGH;
-      digitalWrite(led2Pin, led2State);
+      isLed2On = true;
+      digitalWrite(LED_R, HIGH);
     } else {
-      if (current - level2Previous >= (isMicrosecond ? microseconds : milliseconds) / level2 * ledDutyCycle) {
-        if (led2State == HIGH) {
-          led2State = LOW;
-          digitalWrite(led2Pin, led2State);
+      if (current - level2Previous >= (isMicrosecond ? MICROSECONDS : MILLISECONDS) / level2 * ledDutyCycle) {
+        if (isLed2On == true) {
+          isLed2On = false;
+          digitalWrite(LED_R, LOW);
         }
       }
     }
   }
+  if (isUpdated) {
+    isUpdated = false;
+    digitalWrite(POT_SELECT, LOW);
+    shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, B00000000);
+    shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, level3);
+    digitalWrite(POT_SELECT, HIGH);
+    digitalWrite(POT_SELECT, LOW);
+    shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, B00010000);
+    shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, level3);
+    digitalWrite(POT_SELECT, HIGH);
+  }
 
   {
     int index = segmentIndex % 4;
-    byte segment = (0b1111 ^ (1 << ((sizeof(number) / sizeof(int) - 1) - index)));
+    byte segment = (B1111 ^ (1 << ((sizeof(number) / sizeof(int) - 1) - index)));
     byte data = (segment << 4) + number[index];
-    digitalWrite(latchPin, LOW);
-    shiftOut(dataPin, clockPin, MSBFIRST, data);
-    digitalWrite(latchPin, HIGH);  
+    digitalWrite(REG_LATCH, LOW);
+    shiftOut(REG_DATA, REG_CLOCK, MSBFIRST, data);
+    digitalWrite(REG_LATCH, HIGH);
     segmentIndex++;
   }
 }
 
 void registerBlink(int times, int duration) {
-  digitalWrite(latchPin, LOW);
-  shiftOut(dataPin, clockPin, MSBFIRST, 0b00000000);
-  digitalWrite(latchPin, HIGH);
+  digitalWrite(REG_LATCH, LOW);
+  shiftOut(REG_DATA, REG_CLOCK, MSBFIRST, B00000000);
+  digitalWrite(REG_LATCH, HIGH);
   delay(200);
   for (int i = 0; i < times; i++) {
-    digitalWrite(latchPin, LOW);
-    shiftOut(dataPin, clockPin, MSBFIRST, 0b11111111);
-    digitalWrite(latchPin, HIGH);
+    digitalWrite(REG_LATCH, LOW);
+    shiftOut(REG_DATA, REG_CLOCK, MSBFIRST, B11111111);
+    digitalWrite(REG_LATCH, HIGH);
     delay(duration);
-    digitalWrite(latchPin, LOW);
-    shiftOut(dataPin, clockPin, MSBFIRST, 0b00000000);
-    digitalWrite(latchPin, HIGH);
+    digitalWrite(REG_LATCH, LOW);
+    shiftOut(REG_DATA, REG_CLOCK, MSBFIRST, B00000000);
+    digitalWrite(REG_LATCH, HIGH);
     delay(duration);
   }
 }
