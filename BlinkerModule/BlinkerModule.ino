@@ -45,9 +45,9 @@ void setup() {
   pinMode(REG_DATA, OUTPUT);
   pinMode(REG_LATCH, OUTPUT);
   pinMode(REG_CLOCK, OUTPUT);
-  pinMode(POT_MOSI, OUTPUT);
   pinMode(POT_SELECT, OUTPUT);
   pinMode(POT_CLOCK, OUTPUT);
+  pinMode(POT_MOSI, OUTPUT);
   pinMode(LED_L, OUTPUT);
   pinMode(LED_R, OUTPUT);
 
