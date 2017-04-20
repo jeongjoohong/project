@@ -4,14 +4,16 @@
 #define VOLUME_R    A1
 #define VOLUME_C    A2
 
-#define REG_DATA    10 // DIGITAL(PWM~)
-#define REG_LATCH   9
-#define REG_CLOCK   8
-#define POT_SELECT  7
-#define POT_CLOCK   6
-#define POT_MOSI    5
-#define LED_L       4
-#define LED_R       3
+#define LED_R       12
+#define LED_L       11
+
+#define POT_SELECT  10
+#define POT_CLOCK   9
+#define POT_MOSI    8
+
+#define REG_DATA    7 // DIGITAL(PWM~)
+#define REG_LATCH   6
+#define REG_CLOCK   5
 
 #define MILLISECONDS  1000L
 #define MICROSECONDS  1000000L
@@ -91,11 +93,15 @@ void loop() {
       Serial.print(received1);
       Serial.print('\t');
       Serial.print(received2);
+      Serial.print('\t');
+      Serial.print(received3);
       if (isFiltering) {
         Serial.print('\t');
         Serial.print(filtered1);
         Serial.print('\t');
         Serial.print(filtered2);
+        Serial.print('\t');
+        Serial.print(received2);
       }
       Serial.print('\n');
     }
