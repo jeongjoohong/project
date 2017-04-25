@@ -1,165 +1,135 @@
-
-
 close all;
 clear;
 clc;
 
 %% Variables
-% bandw = 0.1;
-bandw = 5;
-freq1 = 50;
-freq2 = 120;
-amp1 = 0.6;
-amp2 = 0.8;
-plotCol = 7;
+Ls = 800;           % Length of signal
+Lf = 300;           % Length of filter
+Fs = 100;           % Sampling frequency
+T = 1 / Fs;         % Sampling period
+ts = (0:Ls-1) * T;  % Time vector of signal
+tf = (0:Lf-1) * T;  % Time vector of filter
+
+Freq1 = 7;
+Freq2 = 8;
+Amp1 = 0.7;
+Amp2 = 0.6;
+AmpN = 0.01;
+bandw = 1;
+freq1 = Freq1;
+freq2 = Freq2;
+
+plotCol = 5;
 plotInd = 0;
 
-amp_n = 0.01;   % noise power
-
-Fs = 400;       % Sampling frequency
-T = 1/Fs;       % Sampling period
-L = 400;        % Length of signal
-t = (0:L-1)*T;  % Time vector
-
-%% Signal & Noise
-% S = amp1*sin(2*pi*50*t)+amp2*sin(2*pi*120*t);
-S1 = amp1*sin(2*pi*50*t);
-S2 = amp2*sin(2*pi*120*t);
+%% Signal generation
+S1 = Amp1 * sin(2 * pi * Freq1 * ts);
+S2 = Amp2 * sin(2 * pi * Freq2 * ts);
 S = S1 + S2;
-
-% X = S+amp_n*randn(size(t));
+% X = S + AmpN * randn(size(ts));
 X = S;
 
-figure('units','normalized','outerposition',[0 0 1 1]);
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(1000*t,X);
-title('Signal with Noise');
+figure('units', 'normalized', 'outerposition', [0 0 1 1]);
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+plot(ts * 1e3, X);
+title(sprintf('Signal : %.1f*sin(2*pi*%d*t) + %.1f*sin(2*pi*%d*ts)', Amp1, Freq1, Amp2, Freq2));
 xlabel('t (milliseconds)');
 ylabel('X(t)');
 
-%% fft of noised signal
-Y = fftshift(fft(X,L));
-fY = (-numel(Y)/2:numel(Y)/2-1);
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(fY, abs(Y));
-title('FFT of X(t)');
+%% FFT of received signal
+Y = fftshift(fft(X(1:Lf), Lf));
+f = linspace(-Fs / 2, Fs / 2 - Fs / Lf, length(Y));
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+plot(f, abs(Y));
+title('FFT of signal');
 xlabel('f (Hz)');
 ylabel('|X(f)|');
 
-%% sinc filters
-A1 = sinc(bandw*(t-0.5)) .* cos(2*pi*freq1*t);
-A1 = A1 ./ sum(abs(A1).^2); % normalization
-
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(1000*t,A1);
-title(sprintf('Sinc (%.1fHz, centered, shifted %dHz)',bandw,freq1));
+%% Sinc filters
+A1 = sinc(bandw * (tf - (Lf/Fs/2))) .* cos(2 * pi * freq1 * tf);
+A1 = A1 ./ sum(abs(A1) .^ 2);   % Normalization
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+plot(tf * 1e3, A1);
+title(sprintf('Sinc1 : %.1fHz bandwidth, centered, shifted %dHz', bandw, freq1));
 xlabel('t (milliseconds)');
-ylabel(sprintf('sinc(%.1f*(t-0.5)) * cos(2*pi*%d*t)',bandw,freq1));
 
-A2 = sinc(bandw*(t-0.5)) .* cos(2*pi*freq2*t);
-A2 = A2 ./ sum(abs(A2).^2); % normalization
-
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(1000*t,A2);
-title(sprintf('Sinc (%.1fHz, centered, shifted %dHz)',bandw,freq2));
+A2 = sinc(bandw * (tf - (Lf/Fs/2))) .* cos(2 * pi * freq2 * tf);
+A2 = A2 ./ sum(abs(A2) .^ 2);   % Normalization
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+plot(tf * 1e3, A2);
+title(sprintf('Sinc2 : %.1fHz bandwidth, centered, shifted %dHz', bandw, freq2));
 xlabel('t (milliseconds)');
-ylabel(sprintf('sinc(%.1f*(t-0.5)) * cos(2*pi*%d*t)',bandw,freq2));
 
-%% fft of sinc filters
-B1 = fftshift(fft(A1,L));
-fB1 = (-numel(B1)/2:numel(B1)/2-1);
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(fB1, abs(B1));
-title('FFT of sinc(t)');
+%% Examination of sinc filters using FFT and IFFT
+test1FFT = fftshift(fft(A1, Lf));
+% test1FVec = -numel(test1FFT)/2:numel(test1FFT)/2-1;
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+% plot(test1FVec, abs(test1FFT));
+plot(f, abs(test1FFT));
+line([Freq1 Freq1 ; -Freq1 -Freq1]', [get(gca, 'YLim') ; get(gca, 'YLim')]', 'Color', 'red', 'LineStyle', '--');
+title('FFT of sinc1');
 xlabel('f (Hz)');
 
-B2 = fftshift(fft(A2,L));
-fB2 = (-numel(B2)/2:numel(B2)/2-1);
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(fB2, abs(B2));
-title('FFT of sinc(t)');
+test2FFT = fftshift(fft(A2, Lf));
+% test2FVec = -numel(test2FFT)/2:numel(test2FFT)/2-1;
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+% plot(test2FVec, abs(test2FFT));
+plot(f, abs(test2FFT));
+line([Freq2 Freq2 ; -Freq2 -Freq2]', [get(gca, 'YLim') ; get(gca, 'YLim')]', 'Color', 'red', 'LineStyle', '--');
+title('FFT of sinc2');
 xlabel('f (Hz)');
 
-%% ifft of fft of sinc filters
-C1 = ifft(ifftshift(B1),L);
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(1000*t,C1);
-title('IFFT of sinc(f)');
+%% Convolution
+B1 = conv(X(1:Lf), A1, 'same');
+C1 = convolution_test(X(1:Lf), A1, 'same');
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+plot(tf * 1e3, B1, tf * 1e3, C1, '-.');
+legend('matlab function', 'test function', 'Location', 'southeast');
+title('Convolution of signal and sinc1');
 xlabel('t (milliseconds)');
 
-C2 = ifft(ifftshift(B2),L);
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(1000*t,C2);
-title('IFFT of sinc(f)');
+B2 = conv(X(1:Lf), A2, 'same');
+C2 = convolution_test(X(1:Lf), A2, 'same');
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+plot(tf * 1e3, B2, tf * 1e3, C2, '-.');
+legend('matlab function', 'test function', 'Location', 'southeast');
+title('Convolution of signal and sinc2');
 xlabel('t (milliseconds)');
 
-%% convolution
-D1 = conv(X,C1, 'same');
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(t*1e3,D1);
-title('Convolution');
-xlabel('t (milliseconds)');
+%% Comparison of powers
+Pwr_S1 = sum(S1(1:Lf) .^ 2);
+Pwr_S2 = sum(S2(1:Lf) .^ 2);
+Pwr_B1 = sum(B1 .^ 2);
+Pwr_B2 = sum(B2 .^ 2);
+Pwr_C1 = sum(C1 .^ 2);
+Pwr_C2 = sum(C2 .^ 2);
+Pwr = [Pwr_S1 Pwr_B1 Pwr_C1 ; Pwr_S2 Pwr_B2 Pwr_C2];
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+bar(Pwr);
+set(gca, 'XTickLabel', {sprintf('%dHz', freq1), sprintf('%dHz', freq2)});
+title('Comparison of signal powers');
+legend('source', 'matlab function', 'test function', 'Location', 'southeast');
 
-D2 = conv(X,C2, 'same');
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(t*1e3,D2);
-title('Convolution');
-xlabel('t (milliseconds)');
-
-%% absolute value of convolution
-D1abs = conv(X,C1, 'same');
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(t,abs(D1abs));
-title('Absolute of Convolution');
-xlabel('t (milliseconds)');
-
-D2abs = conv(X,C2, 'same');
-plotInd = plotInd+1;
-subplot(plotCol,2,plotInd);
-plot(t,abs(D2abs));
-title('Absolute of Convolution');
-xlabel('t (milliseconds)');
-
-%% maximum value of convoluted (filtered) signal
-E = [max(abs(D1)) max(abs(D2))];
-plotInd = plotInd+1;
-subplot(plotCol,1,ceil(plotInd/2));
-hold on
-for i = 1 : length(E)
-    b(i) = bar(i, E(i));
-end
-hold off
-title(sprintf('Maximum Absolute Value of Convolution %dHz, and %dHz',freq1,freq2));
-ylabel('max(|conv(X(t), sinc(t))|)');
-set(gca, 'XTickLabel',E,'XTick',1:length(E))
-% if max(abs(D1)) > max(abs(D2))
-%     b(1).LineWidth = 2;
-%     b(1).EdgeColor = 'red';
-% else
-%     b(2).LineWidth = 2;
-%     b(2).EdgeColor = 'red';
-% end
-
-%% comparison of powers
-dPwr_S1 = sum(abs(S1).^2);
-dPwr_D1 = sum(abs(D1).^2);
-
-dPwr_S2 = sum(abs(S2).^2);
-dPwr_D2 = sum(abs(D2).^2);
-
-%% loss of signal (%)
-dLossPwr_1 = (1 - dPwr_D1/dPwr_S1)*100;
-dLossPwr_2 = (1 - dPwr_D2/dPwr_S2)*100;
-
-
+%% Loss powers of signal
+LossPwr_B1 = (1 - Pwr_B1 / Pwr_S1) * 100;   % Loss of signal (%)
+LossPwr_B2 = (1 - Pwr_B2 / Pwr_S2) * 100;   % Loss of signal (%)
+LossPwr_C1 = (1 - Pwr_C1 / Pwr_S1) * 100;   % Loss of signal (%)
+LossPwr_C2 = (1 - Pwr_C2 / Pwr_S2) * 100;   % Loss of signal (%)
+Loss = [LossPwr_B1 LossPwr_C1 ; LossPwr_B2 LossPwr_C2];
+plotInd = plotInd + 1;
+subplot(plotCol, 2, plotInd);
+bar(Loss);
+set(gca, 'XTickLabel', {sprintf('%dHz', freq1), sprintf('%dHz', freq2)});
+title('Loss powers of signal (%)');
+legend('matlab function', 'test function');
+ylabel('percentage');
+ylim([0 100]);
