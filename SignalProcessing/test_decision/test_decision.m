@@ -39,10 +39,10 @@ ylabel('X(t)');
 
 %% FFT of received signal
 Y = fftshift(fft(X(1:Lf), Lf));
-f = linspace(-Fs / 2, Fs / 2 - Fs / Lf, length(Y));
+abscissa = linspace(-Fs / 2, Fs / 2 - Fs / Lf, length(Y));
 plotInd = plotInd + 1;
 subplot(plotCol, 2, plotInd);
-plot(f, abs(Y));
+plot(abscissa, abs(Y));
 title('FFT of signal');
 xlabel('f (Hz)');
 ylabel('|X(f)|');
@@ -66,21 +66,17 @@ xlabel('t (milliseconds)');
 
 %% Examination of sinc filters using FFT and IFFT
 test1FFT = fftshift(fft(A1, Lf));
-% test1FVec = -numel(test1FFT)/2:numel(test1FFT)/2-1;
 plotInd = plotInd + 1;
 subplot(plotCol, 2, plotInd);
-% plot(test1FVec, abs(test1FFT));
-plot(f, abs(test1FFT));
+plot(abscissa, abs(test1FFT));
 line([Freq1 Freq1 ; -Freq1 -Freq1]', [get(gca, 'YLim') ; get(gca, 'YLim')]', 'Color', 'red', 'LineStyle', '--');
 title('FFT of sinc1');
 xlabel('f (Hz)');
 
 test2FFT = fftshift(fft(A2, Lf));
-% test2FVec = -numel(test2FFT)/2:numel(test2FFT)/2-1;
 plotInd = plotInd + 1;
 subplot(plotCol, 2, plotInd);
-% plot(test2FVec, abs(test2FFT));
-plot(f, abs(test2FFT));
+plot(abscissa, abs(test2FFT));
 line([Freq2 Freq2 ; -Freq2 -Freq2]', [get(gca, 'YLim') ; get(gca, 'YLim')]', 'Color', 'red', 'LineStyle', '--');
 title('FFT of sinc2');
 xlabel('f (Hz)');
