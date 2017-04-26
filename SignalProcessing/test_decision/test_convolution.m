@@ -1,4 +1,4 @@
-function w = convolution_test(u, v, option)
+function w = test_convolution(u, v, option)
     w = zeros(1, length(u) + length(v) - 1);
     for i = 1:length(u)+length(v)-1
         index = i;

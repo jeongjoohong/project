@@ -3,8 +3,8 @@ clear;
 clc;
 
 %% Variables
-Ls = 800;           % Length of signal
-Lf = 300;           % Length of filter
+Ls = 400;           % Length of signal
+Lf = Ls;            % Length of filter
 Fs = 100;           % Sampling frequency
 T = 1 / Fs;         % Sampling period
 ts = (0:Ls-1) * T;  % Time vector of signal
@@ -14,7 +14,7 @@ Freq1 = 7;
 Freq2 = 8;
 Amp1 = 0.7;
 Amp2 = 0.6;
-AmpN = 0.01;
+% AmpN = 0.01;
 bandw = 1;
 freq1 = Freq1;
 freq2 = Freq2;
@@ -87,7 +87,7 @@ xlabel('f (Hz)');
 
 %% Convolution
 B1 = conv(X(1:Lf), A1, 'same');
-C1 = convolution_test(X(1:Lf), A1, 'same');
+C1 = test_convolution(X(1:Lf), A1, 'same');
 plotInd = plotInd + 1;
 subplot(plotCol, 2, plotInd);
 plot(tf * 1e3, B1, tf * 1e3, C1, '-.');
@@ -96,7 +96,7 @@ title('Convolution of signal and sinc1');
 xlabel('t (milliseconds)');
 
 B2 = conv(X(1:Lf), A2, 'same');
-C2 = convolution_test(X(1:Lf), A2, 'same');
+C2 = test_convolution(X(1:Lf), A2, 'same');
 plotInd = plotInd + 1;
 subplot(plotCol, 2, plotInd);
 plot(tf * 1e3, B2, tf * 1e3, C2, '-.');
@@ -117,7 +117,7 @@ subplot(plotCol, 2, plotInd);
 bar(Pwr);
 set(gca, 'XTickLabel', {sprintf('%dHz', freq1), sprintf('%dHz', freq2)});
 title('Comparison of signal powers');
-legend('source', 'matlab function', 'test function', 'Location', 'southeast');
+legend('source', 'matlab function', 'test function', 'Location', 'southeast', 'Orientation', 'horizontal');
 
 %% Loss powers of signal
 LossPwr_B1 = (1 - Pwr_B1 / Pwr_S1) * 100;   % Loss of signal (%)
