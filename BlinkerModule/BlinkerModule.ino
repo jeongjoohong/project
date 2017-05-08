@@ -18,17 +18,18 @@
 #define MICROSECONDS  1000000L
 
 const bool isMicrosecond  = true;
-const bool isDebugging    = true;
 const bool isFiltering    = true;
+const bool isDebugging    = true;
+
+const float inputResolution   = 1024;
+const float maxBlinkFrequency = 30;
+const float minDigipotLevel   = 115;
+const float maxDigipotLevel   = 255;
+const float ledDutyCycle      = 0.5;
 
 const double samplingFrequency = 1000;
 const double minCutoff  = 1.0;
 const double beta       = 0.007;
-
-const float maxBlinkFrequency = 30;
-const float maxDigipotLevel   = 256;
-const float ledDutyCycle      = 0.5;
-
 OneEuroFilter channel1(samplingFrequency, minCutoff, beta);
 OneEuroFilter channel2(samplingFrequency, minCutoff, beta);
 OneEuroFilter channel3(samplingFrequency, minCutoff, beta);
@@ -79,51 +80,39 @@ void loop() {
     short filter1;
     short filter2;
     short filter3;
+    short digipotLevel;
     
     if (isFiltering) {
       filter1 = round(channel1.filter(input1));
       filter2 = round(channel2.filter(input2));
       filter3 = round(channel3.filter(input3));
-      
-      volume1 = round(filter1 * (maxBlinkFrequency / 1024.0));
-      volume2 = round(filter2 * (maxBlinkFrequency / 1024.0));
-      segment[0] = volume1 / 10;
-      segment[1] = volume1 % 10;
-      segment[2] = volume2 / 10;
-      segment[3] = volume2 % 10;
-      
-      short digipotLevel = round(filter3 * (maxDigipotLevel / 1024.0));
-      if (volume3 != digipotLevel) {
-        volume3 = digipotLevel;
-        digitalWrite(POT_SELECT, LOW);
-        shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, B00000000);
-        shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, volume3);
-        digitalWrite(POT_SELECT, HIGH);
-        digitalWrite(POT_SELECT, LOW);
-        shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, B00010000);
-        shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, volume3);
-        digitalWrite(POT_SELECT, HIGH);
-      }
+      volume1 = round(filter1 * (maxBlinkFrequency / inputResolution));
+      volume2 = round(filter2 * (maxBlinkFrequency / inputResolution));
+      digipotLevel = round(filter3 * ((maxDigipotLevel - minDigipotLevel) / inputResolution) + minDigipotLevel);
     } else {
-      volume1 = round(input1 * (maxBlinkFrequency / 1024.0));
-      volume2 = round(input2 * (maxBlinkFrequency / 1024.0));
-      segment[0] = volume1 / 10;
-      segment[1] = volume1 % 10;
-      segment[2] = volume2 / 10;
-      segment[3] = volume2 % 10;
-      
-      short digipotLevel = round(input3 * (maxDigipotLevel / 1024.0));
-      if (volume3 != digipotLevel) {
-        volume3 = digipotLevel;
-        digitalWrite(POT_SELECT, LOW);
-        shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, B00000000);
-        shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, volume3);
-        digitalWrite(POT_SELECT, HIGH);
-        digitalWrite(POT_SELECT, LOW);
-        shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, B00010000);
-        shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, volume3);
-        digitalWrite(POT_SELECT, HIGH);
-      }
+      volume1 = round(input1 * (maxBlinkFrequency / inputResolution));
+      volume2 = round(input2 * (maxBlinkFrequency / inputResolution));
+      digipotLevel = round(input3 * ((maxDigipotLevel - minDigipotLevel) / inputResolution) + minDigipotLevel);
+    }
+
+    segment[0] = volume1 / 10;
+    segment[1] = volume1 % 10;
+    segment[2] = volume2 / 10;
+    segment[3] = volume2 % 10;
+
+    if (digipotLevel == minDigipotLevel) {
+      digipotLevel = 0;
+    }
+    if (digipotLevel != volume3) {
+      volume3 = digipotLevel;
+      digitalWrite(POT_SELECT, LOW);
+      shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, B00000000);
+      shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, volume3);
+      digitalWrite(POT_SELECT, HIGH);
+      digitalWrite(POT_SELECT, LOW);
+      shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, B00010000);
+      shiftOut(POT_MOSI, POT_CLOCK, MSBFIRST, volume3);
+      digitalWrite(POT_SELECT, HIGH);
     }
     
     if (isDebugging) {
