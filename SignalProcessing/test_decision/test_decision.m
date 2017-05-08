@@ -38,7 +38,7 @@ xlabel('t (milliseconds)');
 ylabel('X(t)');
 
 %% FFT of received signal
-Y = fftshift(fft(X(1:Lf), Lf));
+Y = fftshift(fft(X(1:Lf)));
 abscissa = linspace(-Fs / 2, Fs / 2 - Fs / Lf, length(Y));
 plotInd = plotInd + 1;
 subplot(plotCol, 2, plotInd);
@@ -65,7 +65,7 @@ title(sprintf('Sinc2 : %.1fHz bandwidth, centered, shifted %dHz', bandw, freq2))
 xlabel('t (milliseconds)');
 
 %% Examination of sinc filters using FFT and IFFT
-test1FFT = fftshift(fft(A1, Lf));
+test1FFT = fftshift(fft(A1));
 plotInd = plotInd + 1;
 subplot(plotCol, 2, plotInd);
 plot(abscissa, abs(test1FFT));
@@ -73,7 +73,7 @@ line([Freq1 Freq1 ; -Freq1 -Freq1]', [get(gca, 'YLim') ; get(gca, 'YLim')]', 'Co
 title('FFT of sinc1');
 xlabel('f (Hz)');
 
-test2FFT = fftshift(fft(A2, Lf));
+test2FFT = fftshift(fft(A2));
 plotInd = plotInd + 1;
 subplot(plotCol, 2, plotInd);
 plot(abscissa, abs(test2FFT));
