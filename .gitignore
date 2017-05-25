@@ -1,0 +1,26 @@
+## Generated pdf:
+Paper/paper.pdf
+
+## Core latex/pdflatex auxiliary files:
+Paper/*.aux
+Paper/**/*.log
+Paper/*.out
+Paper/*.toc
+
+## Intermediate documents:
+Paper/**/*.dvi
+Paper/*.ps
+
+## Bibliography auxiliary files:
+Paper/*.bbl
+Paper/*.bcf
+Paper/*.blg
+
+## Editors:
+# WinEdt
+Paper/*.bak
+Paper/*.sav
+# Texpad
+Paper/.texpadtmp
+# TeXnicCenter
+Paper/*.tps
