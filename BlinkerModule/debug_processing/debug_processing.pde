@@ -1,6 +1,6 @@
 import processing.serial.*;
 
-int channel = 2;
+int channel = 1;
 boolean isFiltered = false;
 boolean isFiltering = true;
 int niddle = 10;
@@ -17,6 +17,10 @@ boolean isUpdated;
 
 SignalFilter filter;
 float[][] filterings;
+
+PrintWriter output;
+boolean isRecording = false;
+int startTime = 0;
 
 void setup() {
   size(640, 360);
@@ -149,16 +153,52 @@ void draw() {
       xPosition++;
     }
   }
+  
+  if (isRecording) {
+    textSize(20);
+    fill(250, 10, 10);
+    text("Rec", width - 60, 40);
+  } else {
+    textSize(16);
+    fill(255, 255, 255);
+    text("Press the spacebar to start recording.", width - 320, 40);
+  }
 }
 
 void serialEvent(Serial serial) { 
   String stream = serial.readString();
+  if(isRecording) {
+    int elapseTime = millis() - startTime;
+    int milliseconds = elapseTime % 1000;
+    int seconds = elapseTime / 1000;
+    int minutes = seconds / 60;
+    int hours = minutes / 60;
+    String timestamp = nf(minutes, 2) + ":" + nf(seconds, 2) + "." + nf(milliseconds, 4);
+    output.print(timestamp + "\t" + stream);
+  }
   String[] buffer = split(stream, '\t');
   if (inputSize <= buffer.length) {
     for (int i = 0; i < inputSize; i++) {
       signal[i] = int(float(trim(buffer[i])));
     }
     isUpdated = true;
+  }
+}
+
+void keyReleased() {
+  if (key == ' ') {
+    if (isRecording) {
+      println("close");
+      output.flush();
+      output.close();
+      isRecording = !isRecording;
+    } else {
+      println("start");
+      String filename = "data_" + year() + nf(month(), 2) + nf(day(), 2) + "_" + nf(hour(), 2) + nf(minute(), 2) + nf(second(), 2) + ".txt";
+      output = createWriter(filename);
+      startTime = millis();
+      isRecording = !isRecording;
+    }
   }
 }
 
