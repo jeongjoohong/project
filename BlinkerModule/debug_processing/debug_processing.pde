@@ -2,7 +2,7 @@ import processing.serial.*;
 
 int channel = 1;
 boolean isFiltered = false;
-boolean isFiltering = true;
+boolean isFiltering = false;
 int niddle = 10;
 float minCutoff = 1.0f;  // decrease this to get rid of slow speed jitter
 float beta = 0.007f;     // increase this to get rid of high speed lag
@@ -20,10 +20,15 @@ float[][] filterings;
 
 PrintWriter output;
 boolean isRecording = false;
-int startTime = 0;
+int startTime1 = 0;
+int startTime2 = 0;
+boolean isCalibrated = false;
+int calibratingSecond = 3;
+int samples = 0;
 
 void setup() {
-  size(640, 360);
+  //size(640, 360);
+  size(1024, 480);
   String[] portList = Serial.list();
   int select = 0;
   for (int i = 0; i < portList.length; i++) {
@@ -116,7 +121,7 @@ void draw() {
         }
         stroke(signalColor);
         strokeWeight(2);
-        point(j, map(signals[i][j], 0, 1023, 0, height));
+        point(j, map(signals[i][j], 0, 1023, height, 0));
       }        
     }
     
@@ -125,7 +130,7 @@ void draw() {
         for (int j = 0; j < xPosition; j++) {
           stroke(120);
           strokeWeight(2);
-          point(j, map(filterings[i][j], 0, 1023, 0, height));
+          point(j, map(filterings[i][j], 0, 1023, height, 0));
         }
       }
     }
@@ -144,9 +149,9 @@ void draw() {
         }
         stroke(niddleColor);
         strokeWeight(5);
-        line(display, map(signal[i], 0, 1023, 0, height), display + niddle, map(signal[i], 0, 1023, 0, height));
+        line(display, map(signal[i], 0, 1023, height, 0), display + niddle, map(signal[i], 0, 1023, height, 0));
         strokeWeight(1);
-        line(0, map(signal[i], 0, 1023, 0, height), width, map(signal[i], 0, 1023, 0, height));
+        line(0, map(signal[i], 0, 1023, height, 0), width, map(signal[i], 0, 1023, height, 0));
     }
 
     if (xPosition < display) {
@@ -157,7 +162,19 @@ void draw() {
   if (isRecording) {
     textSize(20);
     fill(250, 10, 10);
-    text("Rec", width - 60, 40);
+    if (!isCalibrated) {
+      int elapseTime = (millis() - startTime1) / 1000;
+      int countdown = calibratingSecond - elapseTime;
+      text("Calibraing.. " + countdown, width - 160, 40);
+    } else {
+      int elapseTime = millis() - startTime2;
+      int milliseconds = elapseTime % 1000;
+      int seconds = elapseTime / 1000;
+      int minutes = seconds / 60;
+      int hours = minutes / 60;
+      String timestamp = nf(minutes%60, 2) + ":" + nf(seconds%60, 2) + "." + nf(milliseconds, 3);
+      text("Rec " + timestamp, width - 160, 40);
+    }
   } else {
     textSize(16);
     fill(255, 255, 255);
@@ -167,14 +184,29 @@ void draw() {
 
 void serialEvent(Serial serial) { 
   String stream = serial.readString();
-  if(isRecording) {
-    int elapseTime = millis() - startTime;
-    int milliseconds = elapseTime % 1000;
-    int seconds = elapseTime / 1000;
-    int minutes = seconds / 60;
-    int hours = minutes / 60;
-    String timestamp = nf(minutes, 2) + ":" + nf(seconds, 2) + "." + nf(milliseconds, 4);
-    output.print(timestamp + "\t" + stream);
+  if (isRecording) {
+    if (!isCalibrated) {
+      int elapseTime = millis() - startTime1;
+      if (elapseTime >= calibratingSecond * 1000) {
+        float frequency = (float) samples / calibratingSecond;
+        println(frequency + " Hz");
+        output.println(frequency + " Hz");
+        samples = 0;
+        isCalibrated = true;
+        startTime2 = millis();
+      } else {
+        samples++;
+      }
+    } else {
+      int elapseTime = millis() - startTime2;
+      int milliseconds = elapseTime % 1000;
+      int seconds = elapseTime / 1000;
+      int minutes = seconds / 60;
+      int hours = minutes / 60;
+      String timestamp = nf(minutes%60, 2) + ":" + nf(seconds%60, 2) + "." + nf(milliseconds, 3);
+      output.print(timestamp + "\t" + stream);
+      println(timestamp);
+    }
   }
   String[] buffer = split(stream, '\t');
   if (inputSize <= buffer.length) {
@@ -191,12 +223,13 @@ void keyReleased() {
       println("close");
       output.flush();
       output.close();
+      isCalibrated = false;
       isRecording = !isRecording;
     } else {
       println("start");
       String filename = "data_" + year() + nf(month(), 2) + nf(day(), 2) + "_" + nf(hour(), 2) + nf(minute(), 2) + nf(second(), 2) + ".txt";
       output = createWriter(filename);
-      startTime = millis();
+      startTime1 = millis();
       isRecording = !isRecording;
     }
   }
